@@ -1,0 +1,6 @@
+[submodule "submodules/ubiquity-os-kernel"]
+	path = submodules/ubiquity-os-kernel
+	url = https://github.com/ubiquity-os/ubiquity-os-kernel.git
+[submodule "submodules/pi-agent"]
+	path = submodules/pi-agent
+	url = https://github.com/0x4007/pi-agent.git

@@ -7,3 +7,6 @@
 [submodule "submodules/personal-agent-bridge"]
 	path = submodules/personal-agent-bridge
 	url = https://github.com/ubiquity-os-marketplace/personal-agent-bridge.git
+[submodule "submodules/codex"]
+	path = submodules/codex
+	url = https://github.com/openai/codex.git

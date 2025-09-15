@@ -10,3 +10,6 @@
 [submodule "submodules/codex"]
 	path = submodules/codex
 	url = https://github.com/openai/codex.git
+[submodule "submodules/personal-agent"]
+	path = submodules/personal-agent
+	url = https://github.com/0x4007/personal-agent.git

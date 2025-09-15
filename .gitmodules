@@ -4,3 +4,6 @@
 [submodule "submodules/pi-agent"]
 	path = submodules/pi-agent
 	url = https://github.com/0x4007/pi-agent.git
+[submodule "submodules/personal-agent-bridge"]
+	path = submodules/personal-agent-bridge
+	url = https://github.com/ubiquity-os-marketplace/personal-agent-bridge.git

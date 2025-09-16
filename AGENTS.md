@@ -1,40 +1,37 @@
 # Repository Guidelines
 
-## Project Structure & Module Organization
-- Root hosts Git submodules under `submodules/`:
-  - `submodules/pi-agent` — Deno KV HTTP server and static site.
-  - `submodules/personal-agent-bridge` — Cloudflare Worker plugin bridging to personal agents.
-  - `submodules/ubiquity-os-kernel` — Core UbiquityOS kernel (TypeScript).
-  - `submodules/codex` — OpenAI Codex CLI (vendor, optional for local tooling).
-- Initialize/refresh submodules: `git submodule update --init --recursive`.
+## Context & Architecture
+- Raspberry Pi-hosted `deno_server` on LAN; SSH with `ssh pi@pi.local`.
+- REST wrapper around the Codex CLI plus a Deno KV store for state. Codex source is vendored under `submodules/codex` for reference.
+- Canonical flow: GitHub App → `ubiquity-os-kernel` → `personal-agent-bridge` → `personal-agent` (workflow) → Raspberry Pi server → Codex → GitHub comment.
+- Workflows are integral to the kernel’s modular, forkable design. Your `personal-agent` is a dedicated repo for your Pi-backed automation.
+- Personal Agent: clone `https://github.com/0x4007/personal-agent.git` into `submodules/personal-agent` and adapt to call the Pi server. Baseline stable commit: `7607b28135d8bf689392cfb0586f5d95dbc9baa3` (post-commit changes are experimental). See `./docs/personal-agent-integration.md`.
+- See `./docs/architecture.md` for diagrams and endpoint flow; ops in `./docs/raspberry-pi-ops.md`; GitHub wiring in `./docs/github-integration.md`; use cases in `./docs/use-cases.md`; E2E steps in `./docs/feedback-loop.md`.
 
-## Build, Test, and Development Commands
+### Primary Use Cases (Milestone)
+- Single ingress: personal-agent calls Pi only via `POST /api/codex` with a rich prompt; Pi derives actions from context.
+- Issue Q&A: Given an issue context, Codex provides an intelligent answer. Pi can clone/fetch code and read comments using `gh` with persistent credentials.
+- PR Review: When review is requested, Codex reads the diff, related issues, and comments to produce a thoughtful review.
+Output: Post as GitHub comments (by plugin using GitHub API). Pi also exposes `/api/gh/comment` as an optional helper.
+
+## Project Structure & Commands
+- Submodules: `pi-agent` (Deno server), `personal-agent-bridge` (CF Worker), `ubiquity-os-kernel` (TypeScript kernel), `personal-agent` (user agent logic), `codex` (reference).
+- Init/refresh: `git submodule update --init --recursive`.
 - pi-agent (Deno ≥1.44)
   - Run: `cd submodules/pi-agent && deno run --unstable-kv --allow-net=0.0.0.0:3000 --allow-run --allow-env=DENO_KV_PATH --allow-read=public,/var/lib/pi-agent --allow-write=/var/lib/pi-agent server/kv_server.ts`
-  - Optional: `export DENO_KV_PATH=/var/lib/pi-agent/kv.sqlite3` for persistence.
-- personal-agent-bridge (Node ≥20)
-  - Install: `cd submodules/personal-agent-bridge && npm i`
-  - Dev worker: `npm run worker` (Wrangler dev)
-  - Build/Test: `npm run build` · `npm test`
-- ubiquity-os-kernel (Node ≥20)
-  - Install: `cd submodules/ubiquity-os-kernel && npm i`
-  - Dev: `npm run dev` (worker+proxy) · Build: `npm run build`
-  - Tests: `npm run jest:test`
-- Codex CLI (optional): `npm i -g @openai/codex` or `brew install codex`.
+  - Persist KV: `export DENO_KV_PATH=/var/lib/pi-agent/kv.sqlite3`.
+- personal-agent-bridge (Node ≥20): `cd submodules/personal-agent-bridge && npm i && npm test && npm run worker`
+- ubiquity-os-kernel (Node ≥20): `cd submodules/ubiquity-os-kernel && npm i && npm run dev && npm run jest:test`
+- Optional: `npm i -g @openai/codex` or `brew install codex`.
 
-## Coding Style & Naming Conventions
-- TypeScript/Deno: 2-space indent; prefer explicit types for public APIs.
-- Lint/format where provided: `npm run format` (or `eslint --fix` / `prettier --write .`).
-- File naming: use kebab-case for folders/files; tests as `*.test.ts` under `tests/` when applicable.
+## Ops Quickstart (Production)
+- SSH: `ssh pi@pi.local`. Systemd unit: `pi-agent-deno.service`.
+- Common actions: `journalctl -u pi-agent-deno.service -f`, `sudo systemctl restart pi-agent-deno.service`, health: `curl http://pi.local:3000/health/ready`.
+- Full details: `./docs/raspberry-pi-ops.md` and `submodules/pi-agent/docs/os-server-setup.md`.
 
-## Testing Guidelines
-- Frameworks: Jest in Node projects; Deno apps may add `Deno.test` later.
-- Run tests per module (see commands above). Aim for meaningful coverage; add unit tests with clear Arrange–Act–Assert structure.
+## Style, Tests, and PRs
+- 2-space indent; ESLint + Prettier where present (`npm run format`). Tests live per module (Jest for Node; Deno tests as added).
+- Use Conventional Commits (`feat:`, `fix:`, `chore:`). PRs should link issues and include evidence (logs/cURL or screenshots) and any config changes.
 
-## Commit & Pull Request Guidelines
-- Commit style: Conventional Commits (e.g., `feat:`, `fix:`, `chore:`). Both Node modules include commitlint.
-- PRs: include a concise description, linked issues, test evidence (logs/screenshots of endpoints like `/health` or `/kv`), and note any config changes.
-
-## Security & Configuration Tips
-- Never commit secrets. Use `.env` for Node modules and `DENO_KV_PATH` for Deno storage.
-- Review `wrangler.toml` and `config/` files before deploying. Limit credentials to required scopes.
+## Security & Config
+- No secrets in git. Use `.env` (Node) and systemd env for prod. Ensure `PATH` exposes `codex` and `gh`. Keep `DENO_KV_PATH` on persistent storage.

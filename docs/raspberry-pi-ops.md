@@ -35,6 +35,25 @@ The current OS-level layout, hardening, and timers are documented in:
   - Use `scripts/sync-agents-md.sh` or enable the example post-push hook `scripts/hooks/post-push.sync-agents-md.example`.
   - Server does not auto-create AGENTS.md; manage it via the sync script or hook.
 
+## Auto-sync on push (pi-agent only)
+
+- Install the submodule pre-push hook to auto pull on the Pi after your push completes:
+
+```
+# From this repo root
+scripts/install-pi-agent-pre-push-hook.sh
+```
+
+- Then push from the pi-agent submodule:
+
+```
+cd submodules/pi-agent
+git push
+```
+
+- The hook waits until the new SHA is visible on your remote (default `origin/<branch>`), then pulls on the Pi (`/home/pi/repos/pi-agent`) and restarts `pi-agent-deno.service`.
+- Customize with env vars when pushing (optional): `PI_USER`, `PI_HOST`, `PI_DIR`, `TIMEOUT_SECS`.
+
 ## Deploy updates
 
 Fast rsync-based deploys (recommended during iteration):

@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+# Pre-push hook for the pi-agent submodule only.
+# After a successful push, waits until the new SHA is visible on the remote,
+# then runs a git pull on the Raspberry Pi and restarts the service.
+#
+# Install:
+#   mkdir -p .git/modules/submodules/pi-agent/hooks
+#   cp scripts/hooks/pre-push.pi-agent.git-pull.example .git/modules/submodules/pi-agent/hooks/pre-push
+#   chmod +x .git/modules/submodules/pi-agent/hooks/pre-push
+#
+# Env overrides (optional):
+#   PI_USER=pi
+#   PI_HOST=pi.local
+#   PI_DIR=/home/pi/repos/pi-agent
+#   REMOTE=<git remote name>   # defaults to first arg from git, else origin
+#   TIMEOUT_SECS=120
+
+[ -n "${CI:-}" ] && exit 0
+[ "${DISABLE_PI_AGENT_SYNC:-0}" = "1" ] && exit 0
+
+REMOTE_INPUT="${1:-}"
+REMOTE="${REMOTE:-${REMOTE_INPUT:-origin}}"
+
+BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
+
+[ -z "$BRANCH" ] && exit 0
+[ -z "$SHA" ] && exit 0
+
+PI_USER="${PI_USER:-pi}"
+PI_HOST="${PI_HOST:-pi.local}"
+PI_DIR="${PI_DIR:-/home/pi/repos/pi-agent}"
+TIMEOUT_SECS=${TIMEOUT_SECS:-120}
+
+# Run the watcher in background so the push is not blocked
+(
+  set -Eeuo pipefail
+  i=0
+  while [ $i -lt "$TIMEOUT_SECS" ]; do
+    if git ls-remote "$REMOTE" "$BRANCH" 2>/dev/null | grep -q "^$SHA\b"; then
+      # Remote has the new commit; perform pull + restart on the Pi
+      ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$PI_USER@$PI_HOST" bash -lc "\
+        set -Eeuo pipefail; \
+        mkdir -p '$(dirname "$PI_DIR")'; \
+        if [ ! -d '$PI_DIR/.git' ]; then \
+          git clone https://github.com/0x4007/pi-agent.git '$PI_DIR'; \
+        fi; \
+        cd '$PI_DIR'; \
+        git fetch --all --prune; \
+        if git ls-remote --heads origin '$BRANCH' | grep -q .; then \
+          git checkout '$BRANCH' || git checkout -b '$BRANCH'; \
+          git reset --hard 'origin/'$BRANCH; \
+        else \
+          git checkout '$BRANCH' || git checkout -b '$BRANCH'; \
+        fi; \
+        if command -v systemctl >/dev/null 2>&1; then \
+          sudo -n systemctl restart pi-agent-deno.service || systemctl --user restart pi-agent-deno.service || true; \
+        fi"
+      exit 0
+    fi
+    sleep 2
+    i=$((i+2))
+  done
+) >/dev/null 2>&1 &
+
+exit 0
+

@@ -10,7 +10,9 @@ export default tsEslint.config([
     "dist/",
     ".wrangler/**",
     "coverage/**",
-    "submodules/**/dist/**"
+    "submodules/**/dist/**",
+    "submodules/codex",
+    "submodules/claude-code-action",
   ] },
   {
     plugins: {

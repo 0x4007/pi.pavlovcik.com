@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Example local Git post-push hook to sync runtime AGENTS.md to the Pi.
+#
+# Install:
+#   mkdir -p .git/hooks
+#   cp scripts/hooks/post-push.sync-agents-md.example .git/hooks/post-push
+#   chmod +x .git/hooks/post-push
+#
+# Customize env below as needed.
+
+export PI_USER=pi
+export PI_HOST=pi.local
+export PI_WORK_DIR=/var/lib/pi-agent/work
+
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+cd "$repo_root"
+
+if [[ -f docs/runtime/AGENTS-RUNTIME.md ]]; then
+  echo "[hook] Syncing AGENTS-RUNTIME.md to Pi ..."
+  SRC_FILE=docs/runtime/AGENTS-RUNTIME.md scripts/sync-agents-md.sh || true
+fi
+
+exit 0

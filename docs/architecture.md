@@ -2,6 +2,8 @@
 
 This repo exposes the Codex CLI over HTTP on a Raspberry Pi and persists state via Deno KV.
 
+See also: [LLM Handoff & Debug](./LLM-HANDOFF.md) for quick trigger/monitor/debug steps.
+
 - Components
   - Pi server (`submodules/pi-agent`): Deno HTTP server on `:3000` with two surfaces:
     - REST Codex wrapper: `POST /api/codex { prompt, timeout_ms? }` runs local `codex` and returns stdout/stderr.
@@ -10,12 +12,12 @@ This repo exposes the Codex CLI over HTTP on a Raspberry Pi and persists state v
   - Tooling: `submodules/codex` (reference source). Production uses the installed `codex` binary.
 
 - Typical request path
-  1) Issue/PR comment hits the GitHub App and triggers the kernel.
-  2) Kernel invokes the `personal-agent-bridge` plugin.
-  3) The bridge dispatches your `personal-agent` workflow (modular, forkable).
-  4) The `personal-agent` calls the Pi server (LAN/VPN/tunnel) to run Codex and/or use KV.
-  5) The Pi server invokes `codex` and optionally writes to `/kv`.
-  6) Reply is posted on GitHub (preferably by the Pi using `gh`, or by the workflow).
+  1. Issue/PR comment hits the GitHub App and triggers the kernel.
+  2. Kernel invokes the `personal-agent-bridge` plugin.
+  3. The bridge dispatches your `personal-agent` workflow (modular, forkable).
+  4. The `personal-agent` calls the Pi server (LAN/VPN/tunnel) to run Codex and/or use KV.
+  5. The Pi server invokes `codex` and optionally writes to `/kv`.
+  6. Reply is posted on GitHub (preferably by the Pi using `gh`, or by the workflow).
 
 - Ports and endpoints
   - Health: `/health`, `/health/live`, `/health/ready`

@@ -1,6 +1,7 @@
 # Repository Guidelines
 
 ## Context & Architecture
+
 - Raspberry Pi-hosted `deno_server` on LAN; SSH with `ssh pi@pi.local`.
 - REST wrapper around the Codex CLI plus a Deno KV store for state. Codex source is vendored under `submodules/codex` for reference.
 - Canonical flow: GitHub App → `ubiquity-os-kernel` → `personal-agent-bridge` → `personal-agent` (workflow) → Raspberry Pi server → Codex → GitHub comment.
@@ -9,12 +10,14 @@
 - See `./docs/architecture.md` for diagrams and endpoint flow; ops in `./docs/raspberry-pi-ops.md`; GitHub wiring in `./docs/github-integration.md`; use cases in `./docs/use-cases.md`; E2E steps in `./docs/feedback-loop.md`.
 
 ### Primary Use Cases (Milestone)
+
 - Single ingress: personal-agent calls Pi only via `POST /api/codex` with a rich prompt; Pi derives actions from context.
 - Issue Q&A: Given an issue context, Codex provides an intelligent answer. Pi can clone/fetch code and read comments using `gh` with persistent credentials.
 - PR Review: When review is requested, Codex reads the diff, related issues, and comments to produce a thoughtful review.
-Output: Post as GitHub comments (by plugin using GitHub API). Pi also exposes `/api/gh/comment` as an optional helper.
+  Output: Post as GitHub comments (by plugin using GitHub API). Pi also exposes `/api/gh/comment` as an optional helper.
 
 ## Project Structure & Commands
+
 - Submodules: `pi-agent` (Deno server), `personal-agent-bridge` (CF Worker), `ubiquity-os-kernel` (TypeScript kernel), `personal-agent` (user agent logic), `codex` (reference).
 - Init/refresh: `git submodule update --init --recursive`.
 - pi-agent (Deno ≥1.44)
@@ -25,13 +28,16 @@ Output: Post as GitHub comments (by plugin using GitHub API). Pi also exposes `/
 - Optional: `npm i -g @openai/codex` or `brew install codex`.
 
 ## Ops Quickstart (Production)
+
 - SSH: `ssh pi@pi.local`. Systemd unit: `pi-agent-deno.service`.
 - Common actions: `journalctl -u pi-agent-deno.service -f`, `sudo systemctl restart pi-agent-deno.service`, health: `curl http://pi.local:3000/health/ready`.
 - Full details: `./docs/raspberry-pi-ops.md` and `submodules/pi-agent/docs/os-server-setup.md`.
 
 ## Style, Tests, and PRs
+
 - 2-space indent; ESLint + Prettier where present (`npm run format`). Tests live per module (Jest for Node; Deno tests as added).
 - Use Conventional Commits (`feat:`, `fix:`, `chore:`). PRs should link issues and include evidence (logs/cURL or screenshots) and any config changes.
 
 ## Security & Config
+
 - No secrets in git. Use `.env` (Node) and systemd env for prod. Ensure `PATH` exposes `codex` and `gh`. Keep `DENO_KV_PATH` on persistent storage.

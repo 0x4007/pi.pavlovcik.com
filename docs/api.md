@@ -1,11 +1,13 @@
 # HTTP API
 
 ## Health
+
 - `GET /health` — detailed server info.
 - `GET /health/live` — liveness probe.
 - `GET /health/ready` — readiness with KV check.
 
 ## Codex Wrapper (single ingress)
+
 - `POST /api/codex`
   - Body:
     - `prompt: string` or `comment|raw_comment: string` (one required)
@@ -15,12 +17,15 @@
     - `mention?: string | false` — when posting, prefix the body with this handle (e.g., `@0x4007`). If omitted, uses `PI_AGENT_MENTION` or `AGENT_OWNER`, falling back to `@0x4007`. Set `false` to disable.
   - Returns: `{ ok, code, output, error?, posted: boolean, gh?: { code, output, error? } }`
   - Example (run + post to an issue):
+
 ```
 curl -sS -X POST http://pi.local:3000/api/codex \
   -H 'content-type: application/json' \
   -d '{"prompt":"Summarize the issue context","repo":"OWNER/REPO","issue":123}' | jq
 ```
-  - Example (raw post to trigger kernel):
+
+- Example (raw post to trigger kernel):
+
 ```
 curl -sS -X POST http://pi.local:3000/api/codex \
   -H 'content-type: application/json' \
@@ -28,6 +33,7 @@ curl -sS -X POST http://pi.local:3000/api/codex \
 ```
 
 ## KV Store
+
 - Path-based CRUD
   - `GET /kv/<...keyParts>` → `{ value, versionstamp }`
   - `PUT /kv/<...keyParts>` body `{ value, expireIn? }` → `{ ok, versionstamp }`
@@ -36,6 +42,7 @@ curl -sS -X POST http://pi.local:3000/api/codex \
   - `GET /kv?prefix=[...]&limit=&cursor=` → `{ entries[], cursor }`
   - `POST /kv/get|/kv/delete|/kv/list` with JSON body
 - Examples:
+
 ```
 # Set
 curl -sS -X PUT http://pi.local:3000/kv/app/config \

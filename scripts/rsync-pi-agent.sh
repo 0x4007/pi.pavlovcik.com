@@ -45,9 +45,15 @@ done
 echo "Creating log dir on Pi (if missing) ..."
 ssh "$PI_SSH" 'sudo mkdir -p /var/lib/pi-agent/logs && sudo chown pi:pi /var/lib/pi-agent/logs' || true
 
+if [[ -f docs/runtime/AGENTS-RUNTIME.md ]]; then
+  echo "Syncing runtime AGENTS.md to Pi work dir ..."
+  PI_USER="$PI_USER" PI_HOST="$PI_HOST" PI_WORK_DIR="/var/lib/pi-agent/work" \
+    SRC_FILE="docs/runtime/AGENTS-RUNTIME.md" \
+    bash scripts/sync-agents-md.sh || true
+fi
+
 echo "Restarting service ..."
 ssh "$PI_SSH" 'sudo systemctl restart pi-agent-deno.service && sleep 1 && systemctl status --no-pager -l pi-agent-deno.service | tail -n 80'
 
 echo "Health check:"
 curl -fsS "http://$PI_HOST:3000/health/ready" || true
-
